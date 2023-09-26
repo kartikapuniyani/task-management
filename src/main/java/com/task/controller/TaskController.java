@@ -2,11 +2,13 @@ package com.task.controller;
 
 import com.task.co.TaskCO;
 import com.task.service.TaskService;
-import com.task.vo.TaskVO;
+import com.task.vo.AggregateVO;
+import com.task.vo.ListVO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.util.Date;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/task")
@@ -24,8 +26,9 @@ public class TaskController {
     }
 
     @GetMapping(path = "/all")
-    public ResponseEntity<List<TaskVO>> getAll() {
-        return ResponseEntity.ok(taskService.getAll());
+    public ResponseEntity<ListVO> getAll(@RequestParam int pageNo,
+                                         @RequestParam int size) {
+        return ResponseEntity.ok(taskService.getAll(pageNo, size));
     }
 
     @DeleteMapping(path = "/delete/{id}")
@@ -34,8 +37,13 @@ public class TaskController {
         return ResponseEntity.ok().build();
     }
 
-    @DeleteMapping(path = "/update/{id}")
+    @PutMapping(path = "/update/{id}")
     public ResponseEntity<Long> update(@PathVariable Long id, @RequestBody TaskCO taskCO) {
         return ResponseEntity.ok(taskService.update(id, taskCO));
+    }
+
+    @GetMapping(path = "/matrix")
+    public ResponseEntity<Map<Date, AggregateVO>> get() {
+        return ResponseEntity.ok(taskService.get());
     }
 }

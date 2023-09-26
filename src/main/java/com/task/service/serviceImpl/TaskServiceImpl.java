@@ -4,12 +4,20 @@ import com.task.co.TaskCO;
 import com.task.entity.Task;
 import com.task.repository.TaskRepository;
 import com.task.service.TaskService;
+import com.task.vo.AggregateVO;
+import com.task.vo.ListVO;
 import com.task.vo.TaskVO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
 
 @Service
 public class TaskServiceImpl implements TaskService {
@@ -30,8 +38,26 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public List<TaskVO> getAll() {
-        return taskRepository.findAll().stream().map(TaskVO::new).collect(Collectors.toList());
+    public Map<Date, AggregateVO> get() {
+        Map<Date, AggregateVO> map = new HashMap<>();
+        taskRepository.findAll().stream().collect(Collectors.groupingBy(t -> t.getDate(), toList())).entrySet().forEach(
+                e -> {
+                        map.put(e.getKey(), new AggregateVO(e.getValue()));
+                }
+        );
+        return map;
+    }
+
+    @Override
+    public ListVO getAll(int pageNo, int size) {
+        Pageable pageable = PageRequest.of(pageNo, size);
+        Page<Task> taskPage = taskRepository.findAll(pageable);
+        return ListVO.builder().totalPages(taskPage.getTotalPages())
+                .pageNo(taskPage.getPageable().getPageNumber())
+                .size(taskPage.getPageable().getPageSize())
+                .totalElements(taskPage.getTotalElements())
+                .data(taskPage.getContent().stream().map(TaskVO::new).collect(toList()))
+                .build();
     }
 
     @Override
@@ -50,22 +76,4 @@ public class TaskServiceImpl implements TaskService {
         task = taskRepository.save(task);
         return task.getId();
     }
-
-//    public <T> ListResponseVO<T> getListResponseVO(Boolean isPageable, Integer page, Integer size, List<T> responseList) {
-//        long totalElements = responseList.size();
-//        long totalPages = 0;
-//        if (null != isPageable && isPageable) {
-//            validatePageMetaData(page);
-//            if (null == size || size == 0) {
-//                size = DEFAULT_PAGE_SIZE;
-//            }
-//            int skipCount = (page - 1) * size;
-//            responseList = responseList.stream().skip(skipCount).limit(size).collect(Collectors.toList());
-//            totalPages = totalElements / size;
-//            if (totalElements % size != 0) {
-//                totalPages = totalPages + 1;
-//            }
-//        }
-//        return new ListResponseVO<T>(responseList, totalElements, totalPages, page, size);
-//    }
 }
